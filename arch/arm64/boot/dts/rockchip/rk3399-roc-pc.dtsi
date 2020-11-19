@@ -209,6 +209,14 @@
 		regulator-max-microvolt = <1400000>;
 		pwm-supply = <&vcc3v3_sys>;
 	};
+
+	ir-receiver {
+		compatible = "gpio-ir-receiver";
+		gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>;
+		linux,rc-map-name = "rc-khadas";
+		pinctrl-names = "default";
+		pinctrl-0 = <&ir_rx>;
+	};
 };
 
 &cpu_l0 {
@@ -615,6 +623,12 @@
 
 		yellow_led_pin: yellow-led-pin {
 			rockchip,pins = <0 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	ir {
+		ir_rx: ir-rx {
+		    rockchip,pins = <1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
