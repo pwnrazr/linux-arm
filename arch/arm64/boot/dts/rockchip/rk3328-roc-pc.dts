@@ -8,11 +8,7 @@
 
 / {
 	model = "Firefly roc-rk3328-pc";
-	compatible = "firefly,roc-rk3328-cc", "rockchip,rk3328";
-
-	chosen {
-		stdout-path = "serial2:1500000n8";
-	};
+	compatible = "firefly,roc-rk3328-pc", "rockchip,rk3328";
 
 	gmac_clkin: external-gmac-clock {
 		compatible = "fixed-clock";
@@ -26,17 +22,32 @@
 		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_LOW>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&sdmmc0m1_pin>;
+		regulator-boot-on;
 		regulator-name = "vcc_sd";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		vin-supply = <&vcc_io>;
 	};
 
+	vcc_sdio: sdmmcio-regulator {
+		compatible = "regulator-gpio";
+		gpios = <&grf_gpio 0 GPIO_ACTIVE_HIGH>;
+		states = <1800000 0x1
+			  3300000 0x0>;
+		regulator-name = "vcc_sdio";
+		regulator-type = "voltage";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		vin-supply = <&vcc_sys>;
+	};
+
 	vcc_host_5v: vcc-host-5v-regulator {
 		compatible = "regulator-fixed";
-		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+		gpio = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&usb20_host_drv>;
+		pinctrl-0 = <&usb30_host_drv>;
 		regulator-name = "vcc_host_5v";
 		regulator-always-on;
 		regulator-boot-on;
@@ -45,7 +56,8 @@
 
 	vcc_host1_5v: vcc_otg_5v: vcc-host1-5v-regulator {
 		compatible = "regulator-fixed";
-		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_LOW>;
+		enable-active-high;
+		gpio = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&usb20_host_drv>;
 		regulator-name = "vcc_host1_5v";
@@ -63,9 +75,17 @@
 		regulator-max-microvolt = <5000000>;
 	};
 
+	vcc_phy: vcc-phy-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_phy";
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
 	ir-receiver {
 		compatible = "gpio-ir-receiver";
 		gpios = <&gpio2 RK_PA2 GPIO_ACTIVE_LOW>;
+		linux,rc-map-name = "rc-khadas";
 		pinctrl-0 = <&ir_int>;
 		pinctrl-names = "default";
 	};
@@ -74,13 +94,19 @@
 		compatible = "gpio-leds";
 
 		power_led: led-0 {
+			label = "firefly:blue:power";
+			linux,default-trigger = "heartbeat";
 			gpios = <&rk805 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "mmc0";
+			default-state = "on";
+			mode = <0x23>;
 		};
 
-		standby_led: led-1 {
+		user_led: led-1 {
+			label = "firefly:yellow:user";
+			linux,default-trigger = "mmc1";
 			gpios = <&rk805 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "heartbeat";
+			default-state = "off";
+			mode = <0x05>;
 		};
 	};
 
@@ -92,9 +118,13 @@
 	};
 };
 
-//&analog_sound {
-//	status = "okay";
-//};
+&analog_sound {
+	status = "okay";
+};
+
+&codec {
+	status = "okay";
+};
 
 &cpu0 {
 	cpu-supply = <&vdd_arm>;
@@ -115,6 +145,8 @@
 &emmc {
 	bus-width = <8>;
 	cap-mmc-highspeed;
+	max-frequency = <150000000>;
+	mmc-ddr-1_8v;
 	mmc-hs200-1_8v;
 	non-removable;
 	pinctrl-names = "default";
@@ -128,22 +160,24 @@
 	assigned-clocks = <&cru SCLK_MAC2IO>, <&cru SCLK_MAC2IO_EXT>;
 	assigned-clock-parents = <&gmac_clkin>, <&gmac_clkin>;
 	clock_in_out = "input";
-	phy-supply = <&vcc_io>;
+	phy-supply = <&vcc_phy>;
 	phy-mode = "rgmii";
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmiim1_pins>;
-	snps,force_thresh_dma_mode;
+	snps,aal;
 	snps,reset-gpio = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
 	snps,reset-delays-us = <0 10000 50000>;
+	snps,rxpbl = <0x4>;
+	snps,txpbl = <0x4>;
 	tx_delay = <0x24>;
 	rx_delay = <0x18>;
 	status = "okay";
 };
 
-//&gpu {
-//	mali-supply = <&vdd_logic>;
-//};
+&gpu {
+	mali-supply = <&vdd_logic>;
+};
 
 &hdmi {
 	status = "okay";
@@ -163,8 +197,8 @@
 	rk805: pmic@18 {
 		compatible = "rockchip,rk805";
 		reg = <0x18>;
-		interrupt-parent = <&gpio2>;
-		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <24 IRQ_TYPE_LEVEL_LOW>;
 		#clock-cells = <1>;
 		clock-output-names = "xin32k", "rk805-clkout2";
 		gpio-controller;
@@ -179,14 +213,13 @@
 		vcc3-supply = <&vcc_sys>;
 		vcc4-supply = <&vcc_sys>;
 		vcc5-supply = <&vcc_io>;
-		vcc6-supply = <&vcc_sys>;
+		vcc6-supply = <&vcc_io>;
 
 		regulators {
 			vdd_logic: DCDC_REG1 {
 				regulator-name = "vdd_logic";
 				regulator-min-microvolt = <712500>;
 				regulator-max-microvolt = <1450000>;
-				regulator-ramp-delay = <12500>;
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-state-mem {
@@ -199,7 +232,6 @@
 				regulator-name = "vdd_arm";
 				regulator-min-microvolt = <712500>;
 				regulator-max-microvolt = <1450000>;
-				regulator-ramp-delay = <12500>;
 				regulator-always-on;
 				regulator-boot-on;
 				regulator-state-mem {
@@ -277,15 +309,14 @@
 };
 
 &io_domains {
-	status = "okay";
-
 	vccio1-supply = <&vcc_io>;
 	vccio2-supply = <&vcc18_emmc>;
-	vccio3-supply = <&vcc_io>;
+	vccio3-supply = <&vcc_sdio>;
 	vccio4-supply = <&vcc_18>;
 	vccio5-supply = <&vcc_io>;
 	vccio6-supply = <&vcc_io>;
 	pmuio-supply = <&vcc_io>;
+	status = "okay";
 };
 
 &pinctrl {
@@ -324,6 +355,26 @@
 			rockchip,pins = <0 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
+
+	usb3 {
+		usb30_host_drv: usb30-host-drv {
+			rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};
+
+&sdmmc_ext {
+	bus-width = <4>;
+	cap-sd-highspeed;
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	mmc-pwrseq = <&sdio_pwrseq>;
+	non-removable;
+	num-slots = <1>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0ext_bus4 &sdmmc0ext_cmd &sdmmc0ext_clk>;
+	sd-uhs-sdr104;
+	status = "okay";
 };
 
 &sdmmc {
@@ -334,20 +385,13 @@
 	max-frequency = <150000000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&sdmmc0_clk &sdmmc0_cmd &sdmmc0_dectn &sdmmc0_bus4>;
+	sd-uhs-sdr12;
+	sd-uhs-sdr25;
+	sd-uhs-sdr50;
+	sd-uhs-sdr104;
 	vmmc-supply = <&vcc_sd>;
+	vqmmc-supply = <&vcc_sdio>;
 	status = "okay";
-};
-
-&spi0 {
-	status = "okay";
-
-	spiflash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-
-		/* maximum speed for Rockchip SPI */
-		spi-max-frequency = <50000000>;
-	};
 };
 
 &tsadc {
@@ -358,37 +402,22 @@
 
 &uart2 {
 	status = "okay";
-
-	/delete-property/ dmas;
-	/delete-property/ dma-names;
 };
 
 &u2phy {
 	status = "okay";
+};
 
-	u2phy_host: host-port {
-		status = "okay";
-	};
+&u2phy_host {
+	status = "okay";
+};
 
-	u2phy_otg: otg-port {
-		status = "okay";
-	};
+&u2phy_otg {
+	status = "okay";
 };
 
 &usb20_otg {
 	dr_mode = "host";
-	status = "okay";
-};
-
-&u3phy {
-	status = "okay";
-};
-
-&u3phy_utmi {
-	status = "okay";
-};
-
-&u3phy_pipe {
 	status = "okay";
 };
 

@@ -227,6 +227,59 @@ iova32_full:
 	return -ENOMEM;
 }
 
+static unsigned long
+__iova_get_aligned_start(unsigned long start, unsigned long size)
+{
+	unsigned long mask = __roundup_pow_of_two(size) - 1;
+
+	return (start + mask) & ~mask;
+}
+
+static int __alloc_and_insert_iova_range_forward(struct iova_domain *iovad,
+			unsigned long size, unsigned long limit_pfn,
+			struct iova *new)
+{
+	struct rb_node *curr;
+	unsigned long flags;
+	unsigned long start, limit;
+
+	spin_lock_irqsave(&iovad->iova_rbtree_lock, flags);
+
+	curr = rb_first(&iovad->rbroot);
+	limit = limit_pfn;
+	start = __iova_get_aligned_start(iovad->start_pfn, size);
+
+	while (curr) {
+		struct iova *curr_iova = rb_entry(curr, struct iova, node);
+		struct rb_node *next = rb_next(curr);
+
+		start = __iova_get_aligned_start(curr_iova->pfn_hi + 1, size);
+		if (next) {
+			struct iova *next_iova = rb_entry(next, struct iova, node);
+			limit = next_iova->pfn_lo - 1;
+		} else {
+			limit = limit_pfn;
+		}
+
+		if ((start + size) <= limit)
+			break;	/* found a free slot */
+		curr = next;
+	}
+
+	if (!curr && start + size > limit) {
+		spin_unlock_irqrestore(&iovad->iova_rbtree_lock, flags);
+		return -ENOMEM;
+	}
+
+	new->pfn_lo = start;
+	new->pfn_hi = new->pfn_lo + size - 1;
+	iova_insert_rbtree(&iovad->rbroot, new, curr);
+
+	spin_unlock_irqrestore(&iovad->iova_rbtree_lock, flags);
+
+	return 0;
+}
+
 static struct kmem_cache *iova_cache;
 static unsigned int iova_cache_users;
 static DEFINE_MUTEX(iova_cache_mutex);
@@ -399,6 +452,31 @@ free_iova(struct iova_domain *iovad, unsigned long pfn)
 EXPORT_SYMBOL_GPL(free_iova);
 
 /**
+ * alloc_iova_first_fit - allocates an iova from the beginning of address space
+ * @iovad: - iova domain in question
+ * @size: - size of page frames to allocate
+ * @limit_pfn: - max limit address
+ * Returns a pfn the allocated iova starts at or IOVA_BAD_ADDR in the case
+ * of a failure.
+*/
+unsigned long
+alloc_iova_first_fit(struct iova_domain *iovad, unsigned long size,
+		     unsigned long limit_pfn)
+{
+	struct iova *new_iova = alloc_iova_mem();
+
+	if (!new_iova)
+		return IOVA_BAD_ADDR;
+
+	if (__alloc_and_insert_iova_range_forward(iovad, size, limit_pfn, new_iova)) {
+		free_iova_mem(new_iova);
+		return IOVA_BAD_ADDR;
+	}
+	return new_iova->pfn_lo;
+}
+EXPORT_SYMBOL_GPL(alloc_iova_first_fit);
+
+/**
  * alloc_iova_fast - allocates an iova from rcache
  * @iovad: - iova domain in question
  * @size: - size of page frames to allocate
@@ -407,6 +485,8 @@ EXPORT_SYMBOL_GPL(free_iova);
  * This function tries to satisfy an iova allocation from the rcache,
  * and falls back to regular allocation on failure. If regular allocation
  * fails too and the flush_rcache flag is set then the rcache will be flushed.
+ * Returns a pfn the allocated iova starts at or IOVA_BAD_ADDR in the case
+ * of a failure.
 */
 unsigned long
 alloc_iova_fast(struct iova_domain *iovad, unsigned long size,
@@ -416,7 +496,7 @@ alloc_iova_fast(struct iova_domain *iovad, unsigned long size,
 	struct iova *new_iova;
 
 	iova_pfn = iova_rcache_get(iovad, size, limit_pfn + 1);
-	if (iova_pfn)
+	if (iova_pfn != IOVA_BAD_ADDR)
 		return iova_pfn;
 
 retry:
@@ -425,7 +505,7 @@ retry:
 		unsigned int cpu;
 
 		if (!flush_rcache)
-			return 0;
+			return IOVA_BAD_ADDR;
 
 		/* Try replenishing IOVAs by flushing rcache. */
 		flush_rcache = false;
@@ -579,7 +659,7 @@ void queue_iova(struct iova_domain *iovad,
 
 	/* Avoid false sharing as much as possible. */
 	if (!atomic_read(&iovad->fq_timer_on) &&
-	    !atomic_cmpxchg(&iovad->fq_timer_on, 0, 1))
+	    !atomic_xchg(&iovad->fq_timer_on, 1))
 		mod_timer(&iovad->fq_timer,
 			  jiffies + msecs_to_jiffies(IOVA_FQ_TIMEOUT));
 }
@@ -956,7 +1036,7 @@ static unsigned long __iova_rcache_get(struct iova_rcache *rcache,
 				       unsigned long limit_pfn)
 {
 	struct iova_cpu_rcache *cpu_rcache;
-	unsigned long iova_pfn = 0;
+	unsigned long iova_pfn = IOVA_BAD_ADDR;
 	bool has_pfn = false;
 	unsigned long flags;
 
@@ -998,7 +1078,7 @@ static unsigned long iova_rcache_get(struct iova_domain *iovad,
 	unsigned int log_size = order_base_2(size);
 
 	if (log_size >= IOVA_RANGE_CACHE_MAX_SIZE)
-		return 0;
+		return IOVA_BAD_ADDR;
 
 	return __iova_rcache_get(&iovad->rcaches[log_size], limit_pfn - size);
 }

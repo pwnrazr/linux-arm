@@ -18,7 +18,8 @@
 #include "sun8i_vi_scaler.h"
 
 static void sun8i_vi_layer_enable(struct sun8i_mixer *mixer, int channel,
-				  int overlay, bool enable, unsigned int zpos)
+				  int overlay, bool enable, unsigned int zpos,
+				  unsigned int old_zpos)
 {
 	u32 val, bld_base, ch_base;
 
@@ -37,7 +38,32 @@ static void sun8i_vi_layer_enable(struct sun8i_mixer *mixer, int channel,
 			   SUN8I_MIXER_CHAN_VI_LAYER_ATTR(ch_base, overlay),
 			   SUN8I_MIXER_CHAN_VI_LAYER_ATTR_EN, val);
 
-	mixer->channel_zpos[channel] = enable ? zpos : -1;
+	if (!enable || zpos != old_zpos) {
+		regmap_update_bits(mixer->engine.regs,
+				   SUN8I_MIXER_BLEND_PIPE_CTL(bld_base),
+				   SUN8I_MIXER_BLEND_PIPE_CTL_EN(old_zpos),
+				   0);
+
+		regmap_update_bits(mixer->engine.regs,
+				   SUN8I_MIXER_BLEND_ROUTE(bld_base),
+				   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(old_zpos),
+				   0);
+	}
+
+	if (enable) {
+		val = SUN8I_MIXER_BLEND_PIPE_CTL_EN(zpos);
+
+		regmap_update_bits(mixer->engine.regs,
+				   SUN8I_MIXER_BLEND_PIPE_CTL(bld_base),
+				   val, val);
+
+		val = channel << SUN8I_MIXER_BLEND_ROUTE_PIPE_SHIFT(zpos);
+
+		regmap_update_bits(mixer->engine.regs,
+				   SUN8I_MIXER_BLEND_ROUTE(bld_base),
+				   SUN8I_MIXER_BLEND_ROUTE_PIPE_MSK(zpos),
+				   val);
+	}
 }
 
 static int sun8i_vi_layer_update_coord(struct sun8i_mixer *mixer, int channel,
@@ -344,9 +370,11 @@ static void sun8i_vi_layer_atomic_disable(struct drm_plane *plane,
 					  struct drm_plane_state *old_state)
 {
 	struct sun8i_vi_layer *layer = plane_to_sun8i_vi_layer(plane);
+	unsigned int old_zpos = old_state->normalized_zpos;
 	struct sun8i_mixer *mixer = layer->mixer;
 
-	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay, false, 0);
+	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay, false, 0,
+			      old_zpos);
 }
 
 static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
@@ -354,11 +382,12 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
 {
 	struct sun8i_vi_layer *layer = plane_to_sun8i_vi_layer(plane);
 	unsigned int zpos = plane->state->normalized_zpos;
+	unsigned int old_zpos = old_state->normalized_zpos;
 	struct sun8i_mixer *mixer = layer->mixer;
 
 	if (!plane->state->visible) {
 		sun8i_vi_layer_enable(mixer, layer->channel,
-				      layer->overlay, false, 0);
+				      layer->overlay, false, 0, old_zpos);
 		return;
 	}
 
@@ -369,10 +398,10 @@ static void sun8i_vi_layer_atomic_update(struct drm_plane *plane,
 	sun8i_vi_layer_update_buffer(mixer, layer->channel,
 				     layer->overlay, plane);
 	sun8i_vi_layer_enable(mixer, layer->channel, layer->overlay,
-			      true, zpos);
+			      true, zpos, old_zpos);
 }
 
-static struct drm_plane_helper_funcs sun8i_vi_layer_helper_funcs = {
+static const struct drm_plane_helper_funcs sun8i_vi_layer_helper_funcs = {
 	.prepare_fb	= drm_gem_fb_prepare_fb,
 	.atomic_check	= sun8i_vi_layer_atomic_check,
 	.atomic_disable	= sun8i_vi_layer_atomic_disable,

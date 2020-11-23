@@ -1176,12 +1176,9 @@ static bool vop_crtc_mode_fixup(struct drm_crtc *crtc,
 	 *
 	 * 2. Get the clock framework to round the rate for us to tell us
 	 *    what it will actually make.
-	 *
-	 * 3. Store the rounded up rate so that we don't need to worry about
-	 *    this in the actual clk_set_rate().
 	 */
 	rate = clk_round_rate(vop->dclk, adjusted_mode->clock * 1000 + 999);
-	adjusted_mode->clock = DIV_ROUND_UP(rate, 1000);
+	adjusted_mode->clock = rate / 1000;
 
 	return true;
 }
@@ -1380,7 +1377,7 @@ static void vop_crtc_atomic_enable(struct drm_crtc *crtc,
 
 	VOP_REG_SET(vop, intr, line_flag_num[0], vact_end);
 
-	clk_set_rate(vop->dclk, adjusted_mode->clock * 1000);
+	clk_set_rate(vop->dclk, adjusted_mode->clock * 1000 + 999);
 
 	VOP_REG_SET(vop, common, standby, 0);
 	mutex_unlock(&vop->vop_lock);

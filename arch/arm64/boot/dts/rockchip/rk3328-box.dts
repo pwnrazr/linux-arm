@@ -10,10 +10,6 @@
 	model = "Rockchip RK3328 BOX";
 	compatible = "rockchip,rk3328-box", "rockchip,rk3328";
 
-	chosen {
-		stdout-path = "serial2:1500000n8";
-	};
-
 	vcc_sd: sdmmc-regulator {
 		compatible = "regulator-fixed";
 		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_HIGH>;
@@ -23,6 +19,19 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 		vin-supply = <&vcc_io>;
+	};
+
+	vcc_sdio: sdmmcio-regulator {
+		compatible = "regulator-gpio";
+		gpios = <&grf_gpio 0 GPIO_ACTIVE_HIGH>;
+		states = <1800000 0x1
+			  3300000 0x0>;
+		regulator-name = "vcc_sdio";
+		regulator-type = "voltage";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		vin-supply = <&vcc_sys>;
 	};
 
 	vcc_host_5v: vcc-host-5v-regulator {
@@ -84,6 +93,14 @@
 		pinctrl-0 = <&wifi_enable_h>;
 		reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&analog_sound {
+	status = "okay";
+};
+
+&codec {
+	status = "okay";
 };
 
 &cpu0 {
@@ -253,6 +270,10 @@
 };
 
 &i2s0 {
+	status = "okay";
+};
+
+&i2s1 {
 	status = "okay";
 };
 
