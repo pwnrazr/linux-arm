@@ -74,14 +74,14 @@
 			label = "red:diy";
 			gpios = <&gpio0 RK_PB5 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
-			linux,default-trigger = "mmc1";
+			linux,default-trigger = "mmc2";
 		};
 
 		yellow_led: led-2 {
 			label = "yellow:yellow-led";
 			gpios = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
 			default-state = "off";
-			linux,default-trigger = "mmc0";
+			linux,default-trigger = "mmc1";
 		};
 	};
 
@@ -214,8 +214,8 @@
 		compatible = "gpio-ir-receiver";
 		gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>;
 		linux,rc-map-name = "rc-khadas";
+		pinctrl-0 = <&ir_int>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&ir_rx>;
 	};
 };
 
@@ -524,7 +524,7 @@
 	status = "okay";
 
 	fusb1: usb-typec@22 {
-		compatible = "fairchild,fusb302";
+		compatible = "fcs,fusb302";
 		reg = <0x22>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <1 IRQ_TYPE_LEVEL_LOW>;
@@ -541,7 +541,7 @@
 	status = "okay";
 
 	fusb0: usb-typec@22 {
-		compatible = "fairchild,fusb302";
+		compatible = "fcs,fusb302";
 		reg = <0x22>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
@@ -627,8 +627,8 @@
 	};
 
 	ir {
-		ir_rx: ir-rx {
-		    rockchip,pins = <1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
+		ir_int: ir-int {
+			rockchip,pins = <1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
@@ -706,7 +706,7 @@
 
 &sdmmc {
 	bus-width = <4>;
-	cap-mmc-highspeed;
+//	cap-mmc-highspeed;
 	cap-sd-highspeed;
 	cd-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
 	disable-wp;
@@ -721,7 +721,7 @@
 
 &sdhci {
 	bus-width = <8>;
-	mmc-hs200-1_8v;
+//	mmc-hs200-1_8v;
 	non-removable;
 	status = "okay";
 };
