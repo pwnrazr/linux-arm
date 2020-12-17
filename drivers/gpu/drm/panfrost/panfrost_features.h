@@ -296,7 +296,9 @@ enum panfrost_hw_feature {
 	BIT_ULL(HW_FEATURE_PROTECTED_MODE) | \
 	BIT_ULL(HW_FEATURE_PROTECTED_DEBUG_MODE) | \
 	BIT_ULL(HW_FEATURE_COHERENCY_REG) | \
-	BIT_ULL(HW_FEATURE_AARCH64_MMU))
+	BIT_ULL(HW_FEATURE_AARCH64_MMU) | \
+	BIT_ULL(HW_FEATURE_TLS_HASHING) | \
+	BIT_ULL(HW_FEATURE_3BIT_EXT_RW_L2_MMU_CONFIG))
 
 static inline bool panfrost_has_hw_feature(struct panfrost_device *pfdev,
 					   enum panfrost_hw_feature feat)

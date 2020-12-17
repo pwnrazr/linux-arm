@@ -365,9 +365,6 @@
 
 &uart2 {
 	status = "okay";
-
-	/delete-property/ dmas;
-	/delete-property/ dma-names;
 };
 
 &u2phy {

@@ -10,6 +10,10 @@
 	model = "Rockchip RK3328 BOX";
 	compatible = "rockchip,rk3328-box", "rockchip,rk3328";
 
+	chosen {
+		stdout-path = "serial2:1500000n8";
+	};
+
 	vcc_sd: sdmmc-regulator {
 		compatible = "regulator-fixed";
 		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_HIGH>;

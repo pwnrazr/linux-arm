@@ -657,11 +657,9 @@ static bool vga_arbiter_add_pci_device(struct pci_dev *pdev)
 	struct pci_bus *bus;
 	struct pci_dev *bridge;
 	u16 cmd;
-	int pci_class = pdev->class >> 8;
 
 	/* Only deal with VGA class devices */
-	if (pci_class != PCI_CLASS_DISPLAY_VGA &&
-		pci_class != PCI_CLASS_DISPLAY_3D)
+	if ((pdev->class >> 8) != PCI_CLASS_DISPLAY_VGA)
 		return false;
 
 	/* Allocate structure */

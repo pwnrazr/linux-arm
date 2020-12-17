@@ -130,7 +130,7 @@ int panfrost_devfreq_init(struct panfrost_device *pfdev)
 	dev_pm_opp_put(opp);
 
 	devfreq = devm_devfreq_add_device(dev, &panfrost_devfreq_profile,
-					  DEVFREQ_GOV_PERFORMANCE, NULL);
+					  DEVFREQ_GOV_SIMPLE_ONDEMAND, NULL);
 	if (IS_ERR(devfreq)) {
 		DRM_DEV_ERROR(dev, "Couldn't initialize GPU devfreq\n");
 		ret = PTR_ERR(devfreq);

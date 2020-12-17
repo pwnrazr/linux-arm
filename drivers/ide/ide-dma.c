@@ -224,12 +224,6 @@ int __ide_dma_bad_drive(ide_drive_t *drive)
 				    drive->name, (char *)&id[ATA_ID_PROD]);
 		return blacklist;
 	}
-	if (id->config == 0x848a) {
-		printk(KERN_WARNING "%s: Disabling (U)DMA for %s (CFA)\n",
-				    drive->name, id->model);
-		return 1;
-	}
-
 	return 0;
 }
 EXPORT_SYMBOL(__ide_dma_bad_drive);

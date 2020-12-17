@@ -4155,12 +4155,6 @@ static void ata_dev_xfermask(struct ata_device *dev)
 			     "simplex DMA is claimed by other device, disabling DMA\n");
 	}
 
-	if (ata_id_is_cfa(dev->id)) {
-		xfer_mask &= ~(ATA_MASK_MWDMA | ATA_MASK_UDMA);
-		ata_dev_printk(dev, KERN_WARNING,
-			       "device is a CFA, disabling DMA\n");
-	}
-
 	if (ap->flags & ATA_FLAG_NO_IORDY)
 		xfer_mask &= ata_pio_mask_no_iordy(dev);
 
