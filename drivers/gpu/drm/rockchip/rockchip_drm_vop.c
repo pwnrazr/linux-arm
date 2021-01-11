@@ -1142,12 +1142,84 @@ static void vop_crtc_disable_vblank(struct drm_crtc *crtc)
 	spin_unlock_irqrestore(&vop->irq_lock, flags);
 }
 
+static bool vop_crtc_is_tmds(struct drm_crtc *crtc)
+{
+	struct rockchip_crtc_state *s = to_rockchip_crtc_state(crtc->state);
+	struct drm_encoder *encoder;
+
+	switch (s->output_type) {
+	case DRM_MODE_CONNECTOR_LVDS:
+	case DRM_MODE_CONNECTOR_DSI:
+		return false;
+	case DRM_MODE_CONNECTOR_eDP:
+	case DRM_MODE_CONNECTOR_HDMIA:
+	case DRM_MODE_CONNECTOR_DisplayPort:
+		return true;
+	}
+
+	drm_for_each_encoder_mask(encoder, crtc->dev, crtc->state->encoder_mask)
+		if (encoder->encoder_type != DRM_MODE_ENCODER_TMDS)
+			return false;
+
+	return true;
+}
+
+/*
+ * The VESA DMT standard specifies a 0.5% pixel clock frequency tolerance.
+ * The CVT spec reuses that tolerance in its examples.
+ */
+#define	CLOCK_TOLERANCE_PER_MILLE	5
+
+static enum drm_mode_status vop_crtc_mode_valid(struct drm_crtc *crtc,
+					const struct drm_display_mode *mode)
+{
+	struct vop *vop = to_vop(crtc);
+	const struct vop_rect *max_output = &vop->data->max_output;
+	long rounded_rate;
+	long lowest, highest;
+
+	if (!vop_crtc_is_tmds(crtc))
+		return MODE_OK;
+
+	if (mode->flags & DRM_MODE_FLAG_INTERLACE)
+		return MODE_NO_INTERLACE;
+
+	rounded_rate = clk_round_rate(vop->dclk, mode->clock * 1000 + 999);
+	if (rounded_rate < 0)
+		return MODE_NOCLOCK;
+
+	lowest = mode->clock * (1000 - CLOCK_TOLERANCE_PER_MILLE);
+	if (rounded_rate < lowest)
+		return MODE_CLOCK_LOW;
+
+	highest = mode->clock * (1000 + CLOCK_TOLERANCE_PER_MILLE);
+	if (rounded_rate > highest)
+		return MODE_CLOCK_HIGH;
+
+	if (max_output->width && max_output->height)
+		return drm_mode_validate_size(mode, max_output->width,
+					      max_output->height);
+
+	return MODE_OK;
+}
+
 static bool vop_crtc_mode_fixup(struct drm_crtc *crtc,
 				const struct drm_display_mode *mode,
 				struct drm_display_mode *adjusted_mode)
 {
 	struct vop *vop = to_vop(crtc);
+	const struct vop_rect *max_output = &vop->data->max_output;
 	unsigned long rate;
+
+	if (max_output->width && max_output->height) {
+		enum drm_mode_status status;
+
+		status = drm_mode_validate_size(adjusted_mode,
+						max_output->width,
+						max_output->height);
+		if (status != MODE_OK)
+			return false;
+	}
 
 	/*
 	 * Clock craziness.
@@ -1512,6 +1584,7 @@ static void vop_crtc_atomic_flush(struct drm_crtc *crtc,
 }
 
 static const struct drm_crtc_helper_funcs vop_crtc_helper_funcs = {
+	.mode_valid = vop_crtc_mode_valid,
 	.mode_fixup = vop_crtc_mode_fixup,
 	.atomic_check = vop_crtc_atomic_check,
 	.atomic_begin = vop_crtc_atomic_begin,
@@ -1529,7 +1602,11 @@ static struct drm_crtc_state *vop_crtc_duplicate_state(struct drm_crtc *crtc)
 {
 	struct rockchip_crtc_state *rockchip_state;
 
-	rockchip_state = kzalloc(sizeof(*rockchip_state), GFP_KERNEL);
+	if (WARN_ON(!crtc->state))
+		return NULL;
+
+	rockchip_state = kmemdup(to_rockchip_crtc_state(crtc->state),
+				 sizeof(*rockchip_state), GFP_KERNEL);
 	if (!rockchip_state)
 		return NULL;
 
