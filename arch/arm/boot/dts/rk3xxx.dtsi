@@ -99,6 +99,8 @@
 		reg = <0x10138000 0x1000>;
 		cache-unified;
 		cache-level = <2>;
+		prefetch-data = <1>;
+		prefetch-instr = <1>;
 	};
 
 	scu@1013c000 {
@@ -273,6 +275,15 @@
 		fifo-depth = <256>;
 		resets = <&cru SRST_EMMC>;
 		reset-names = "reset";
+		status = "disabled";
+	};
+
+	nfc: nand-controller@10500000 {
+		compatible = "rockchip,rk2928-nfc";
+		reg = <0x10500000 0x4000>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&cru HCLK_NANDC0>;
+		clock-names = "ahb";
 		status = "disabled";
 	};
 

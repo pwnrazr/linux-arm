@@ -96,6 +96,13 @@
 	cpu-supply = <&vdd_cpu>;
 };
 
+&cpu_opp_table {
+        opp-1704000000 {
+        opp-hz = /bits/ 64 <1704000000>;
+        opp-microvolt = <1350000>;
+    };
+};
+
 &emmc {
 	bus-width = <8>;
 	cap-mmc-highspeed;
@@ -120,6 +127,11 @@
 	snps,reset-gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_LOW>;
 	tx_delay = <0x30>;
 	rx_delay = <0x10>;
+	status = "okay";
+};
+
+&gpu {
+	mali-supply = <&vdd_gpu>;
 	status = "okay";
 };
 

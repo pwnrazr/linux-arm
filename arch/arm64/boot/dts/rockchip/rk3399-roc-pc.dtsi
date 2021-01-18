@@ -110,14 +110,12 @@
 		regulator-max-microvolt = <5000000>;
 	};
 
-	sys_12v: sys_12v {
+	sys_12v: sys-12v {
 		compatible = "regulator-fixed";
 		regulator-name = "sys_12v";
 		regulator-always-on;
 		regulator-boot-on;
 		vin-supply = <&dc_12v>;
-		regulator-min-microvolt = <12000000>;
-		regulator-max-microvolt = <12000000>;
 	};
 
 	/* switched by pmic_sleep */
@@ -708,7 +706,6 @@
 
 &sdmmc {
 	bus-width = <4>;
-	cap-mmc-highspeed;
 	cap-sd-highspeed;
 	cd-gpios = <&gpio0 RK_PA7 GPIO_ACTIVE_LOW>;
 	disable-wp;
@@ -723,7 +720,6 @@
 
 &sdhci {
 	bus-width = <8>;
-//	mmc-hs200-1_8v;
 	non-removable;
 	status = "okay";
 };
