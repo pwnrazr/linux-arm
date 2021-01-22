@@ -12,8 +12,6 @@
 
 #include "sunxi_engine.h"
 
-#define SUN8I_MIXER_MAX_CHANNELS		5
-
 #define SUN8I_MIXER_SIZE(w, h)			(((h) - 1) << 16 | ((w) - 1))
 #define SUN8I_MIXER_COORD(x, y)			((y) << 16 | (x))
 
@@ -181,9 +179,6 @@ struct sun8i_mixer {
 
 	struct clk			*bus_clk;
 	struct clk			*mod_clk;
-
-	/* -1 means that layer is disabled */
-	int channel_zpos[SUN8I_MIXER_MAX_CHANNELS];
 };
 
 static inline struct sun8i_mixer *

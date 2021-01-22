@@ -5,7 +5,6 @@
 
 #include <linux/clk-provider.h>
 #include <linux/io.h>
-#include <linux/of_address.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
 
@@ -1311,45 +1310,13 @@ static int sun8i_r40_ccu_probe(struct platform_device *pdev)
 	struct resource *res;
 	struct regmap *regmap;
 	void __iomem *reg;
+	u32 val;
+	int ret;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	reg = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(reg))
 		return PTR_ERR(reg);
-
-	regmap = devm_regmap_init_mmio(&pdev->dev, reg,
-				       &sun8i_r40_ccu_regmap_config);
-	if (IS_ERR(regmap))
-		return PTR_ERR(regmap);
-
-	return 0;
-}
-
-static const struct of_device_id sun8i_r40_ccu_ids[] = {
-	{ .compatible = "allwinner,sun8i-r40-ccu" },
-	{ }
-};
-
-static struct platform_driver sun8i_r40_ccu_driver = {
-	.probe	= sun8i_r40_ccu_probe,
-	.driver	= {
-		.name	= "sun8i-r40-ccu",
-		.of_match_table	= sun8i_r40_ccu_ids,
-	},
-};
-builtin_platform_driver(sun8i_r40_ccu_driver);
-
-static void __init sun8i_r40_ccu_setup(struct device_node *node)
-{
-	void __iomem *reg;
-	u32 val;
-	int ret;
-
-	reg = of_iomap(node, 0);
-	if (IS_ERR(reg)) {
-		pr_err("%pOF: Could not map the clock registers\n", node);
-		return;
-	}
 
 	/* Force the PLL-Audio-1x divider to 1 */
 	val = readl(reg + SUN8I_R40_PLL_AUDIO_REG);
@@ -1374,7 +1341,14 @@ static void __init sun8i_r40_ccu_setup(struct device_node *node)
 	writel(SUN8I_R40_SYS_32K_CLK_KEY | BIT(8),
 	       reg + SUN8I_R40_SYS_32K_CLK_REG);
 
-	sunxi_ccu_probe(node, reg, &sun8i_r40_ccu_desc);
+	regmap = devm_regmap_init_mmio(&pdev->dev, reg,
+				       &sun8i_r40_ccu_regmap_config);
+	if (IS_ERR(regmap))
+		return PTR_ERR(regmap);
+
+	ret = sunxi_ccu_probe(pdev->dev.of_node, reg, &sun8i_r40_ccu_desc);
+	if (ret)
+		return ret;
 
 	/* Gate then ungate PLL CPU after any rate changes */
 	ccu_pll_notifier_register(&sun8i_r40_pll_cpu_nb);
@@ -1383,6 +1357,19 @@ static void __init sun8i_r40_ccu_setup(struct device_node *node)
 	ccu_mux_notifier_register(pll_cpu_clk.common.hw.clk,
 				  &sun8i_r40_cpu_nb);
 
+	return 0;
 }
-CLK_OF_DECLARE_DRIVER(sun8i_r40_ccu, "allwinner,sun8i-r40-ccu",
-		      sun8i_r40_ccu_setup);
+
+static const struct of_device_id sun8i_r40_ccu_ids[] = {
+	{ .compatible = "allwinner,sun8i-r40-ccu" },
+	{ }
+};
+
+static struct platform_driver sun8i_r40_ccu_driver = {
+	.probe	= sun8i_r40_ccu_probe,
+	.driver	= {
+		.name	= "sun8i-r40-ccu",
+		.of_match_table	= sun8i_r40_ccu_ids,
+	},
+};
+builtin_platform_driver(sun8i_r40_ccu_driver);
