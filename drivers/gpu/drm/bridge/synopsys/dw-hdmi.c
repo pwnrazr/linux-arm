@@ -81,15 +81,15 @@ static const u16 csc_coeff_rgb_out_eitu709[3][4] = {
 };
 
 static const u16 csc_coeff_rgb_in_eitu601[3][4] = {
-	{ 0x2591, 0x1322, 0x074b, 0x0000 },
-	{ 0x6535, 0x2000, 0x7acc, 0x0200 },
-	{ 0x6acd, 0x7534, 0x2000, 0x0200 }
+	{ 0x2040, 0x1080, 0x0640, 0x0040 },
+	{ 0xe880, 0x1c00, 0xfb80, 0x0200 },
+	{ 0xed80, 0xf680, 0x1c00, 0x0200 }
 };
 
 static const u16 csc_coeff_rgb_in_eitu709[3][4] = {
-	{ 0x2dc5, 0x0d9b, 0x049e, 0x0000 },
-	{ 0x62f0, 0x2000, 0x7d11, 0x0200 },
-	{ 0x6756, 0x78ab, 0x2000, 0x0200 }
+	{ 0x2740, 0x0bc0, 0x0400, 0x0040 },
+	{ 0xe680, 0x1c00, 0xfd80, 0x0200 },
+	{ 0xea40, 0xf980, 0x1c00, 0x0200 }
 };
 
 static const u16 csc_coeff_rgb_full_to_rgb_limited[3][4] = {
@@ -1060,7 +1060,7 @@ static void hdmi_video_csc(struct dw_hdmi *hdmi)
 	if (is_color_space_interpolation(hdmi))
 		interpolation = HDMI_CSC_CFG_INTMODE_CHROMA_INT_FORMULA1;
 	else if (is_color_space_decimation(hdmi))
-		decimation = HDMI_CSC_CFG_DECMODE_CHROMA_INT_FORMULA3;
+		decimation = HDMI_CSC_CFG_DECMODE_CHROMA_INT_FORMULA1;
 
 	switch (hdmi_bus_fmt_color_depth(hdmi->hdmi_data.enc_out_bus_format)) {
 	case 8:

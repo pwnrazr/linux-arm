@@ -4,6 +4,9 @@
  *
  * Copyright (C) 2020 Alex Bee <knaerzche@gmail.com>
  *
+ * Based on Allwinner sun8i deinterlacer with scaler driver
+ *  Copyright (C) 2019 Jernej Skrabec <jernej.skrabec@siol.net>
+ *
  */
 
 #include <linux/clk.h>
@@ -15,7 +18,6 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/pm_runtime.h>
-#include <linux/reset.h>
 
 #include <media/v4l2-device.h>
 #include <media/v4l2-ctrls.h>
@@ -37,7 +39,6 @@ static struct iep_fmt formats[] = {
 		.depth = 12,
 		.uv_factor = 4,
 	},
-
 	{
 		.fourcc = V4L2_PIX_FMT_NV21,
 		.color_swap = IEP_YUV_SWP_SP_VU,
@@ -98,24 +99,11 @@ static bool iep_check_pix_format(u32 pixelformat)
 	return false;
 }
 
-static struct vb2_v4l2_buffer *iep_m2m_next_src_buf(struct iep_ctx *ctx)
-{
-	struct vb2_v4l2_buffer *src_buf = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
-
-	/* applcication has set a sequence: take it as start point */
-	if (ctx->src_sequence == 0 && src_buf->sequence > 0)
-		ctx->src_sequence = src_buf->sequence;
-
-	src_buf->sequence = ctx->src_sequence++;
-
-	return src_buf;
-}
-
 static struct vb2_v4l2_buffer *iep_m2m_next_dst_buf(struct iep_ctx *ctx)
 {
 	struct vb2_v4l2_buffer *dst_buf = v4l2_m2m_next_dst_buf(ctx->fh.m2m_ctx);
 
-	/* applcication has set a sequence: take it as start point */
+	/* application has set a dst sequence: take it as start point */
 	if (ctx->dst_sequence == 0 && dst_buf->sequence > 0)
 		ctx->dst_sequence = dst_buf->sequence;
 
@@ -237,7 +225,7 @@ static void iep_device_run(void *priv)
 	iep_write(iep, IEP_CONFIG_DONE, 1);
 
 	/* setup src buff(s)/addresses */
-	src = iep_m2m_next_src_buf(ctx);
+	src = v4l2_m2m_next_src_buf(ctx->fh.m2m_ctx);
 	addr = vb2_dma_contig_plane_dma_addr(&src->vb2_buf, 0);
 
 	iep_write(iep, IEP_DEIN_IN_IMG0_Y(ctx->field_bff), addr);
@@ -423,7 +411,7 @@ static int iep_start_streaming(struct vb2_queue *vq, unsigned int count)
 		ctx->job_abort = false;
 
 		iep_init(ctx->iep);
-		//if (ctx->src_fmt.pix.field != ctx->src_fmt.pix.field)
+		//if (ctx->src_fmt.pix.field != ctx->dst_fmt.pix.field)
 		iep_dein_init(ctx->iep);
 	}
 
@@ -452,7 +440,7 @@ static const struct vb2_ops iep_qops = {
 	.buf_prepare		= iep_buf_prepare,
 	.buf_queue		= iep_buf_queue,
 	.start_streaming	= iep_start_streaming,
-	.stop_streaming	= iep_stop_streaming,
+	.stop_streaming		= iep_stop_streaming,
 	.wait_prepare		= vb2_ops_wait_prepare,
 	.wait_finish		= vb2_ops_wait_finish,
 };
@@ -827,12 +815,6 @@ static int iep_parse_dt(struct rockchip_iep *iep)
 {
 	int ret = 0;
 
-	iep->resets = devm_reset_control_array_get(iep->dev, false, true);
-	if (IS_ERR(iep->resets)) {
-		dev_err(iep->dev, "getting resets failed %ld\n", PTR_ERR(iep->resets));
-		return PTR_ERR(iep->resets);
-	}
-
 	iep->axi_clk = devm_clk_get(iep->dev, "axi");
 	if (IS_ERR(iep->axi_clk)) {
 		dev_err(iep->dev, "failed to get aclk clock\n");
@@ -1007,16 +989,6 @@ static int iep_probe(struct platform_device *pdev)
 		goto err_video;
 	}
 
-	/*
-	 *  needs to be done here, doing it any later, i.e. after
-	 *  the clocks are enabled, will make the device no more
-	 *  working (HW bug?)
-	 */
-	reset_control_assert(iep->resets);
-	udelay(1);
-	reset_control_deassert(iep->resets);
-	udelay(1);
-
 	pm_runtime_set_autosuspend_delay(iep->dev, 100);
 	pm_runtime_use_autosuspend(iep->dev);
 	pm_runtime_enable(iep->dev);
@@ -1052,8 +1024,6 @@ static int __maybe_unused iep_runtime_suspend(struct device *dev)
 {
 	struct rockchip_iep *iep = dev_get_drvdata(dev);
 
-	dev_info(iep->dev, "%s\n", __func__);
-
 	clk_disable_unprepare(iep->ahb_clk);
 	clk_disable_unprepare(iep->axi_clk);
 
@@ -1066,8 +1036,6 @@ static int __maybe_unused iep_runtime_resume(struct device *dev)
 	int ret = 0;
 
 	iep = dev_get_drvdata(dev);
-
-	dev_info(iep->dev, "%s\n", __func__);
 
 	ret = clk_prepare_enable(iep->axi_clk);
 	if (ret) {

@@ -27,6 +27,9 @@
 		i2c1 = &i2c1;
 		i2c2 = &i2c2;
 		i2c3 = &i2c3;
+		mmc0 = &sdmmc;
+		mmc1 = &sdio;
+		mmc2 = &emmc;
 		ethernet0 = &gmac2io;
 		ethernet1 = &gmac2phy;
 	};
@@ -138,11 +141,6 @@
 		opp-1296000000 {
 			opp-hz = /bits/ 64 <1296000000>;
 			opp-microvolt = <1300000>;
-			clock-latency-ns = <40000>;
-		};
-		opp-1512000000 {
-			opp-hz = /bits/ 64 <1512000000>;
-			opp-microvolt = <1450000>;
 			clock-latency-ns = <40000>;
 		};
 	};
@@ -361,12 +359,6 @@
 				reg = <RK3328_PD_VPU>;
 				clocks = <&cru ACLK_VPU>, <&cru HCLK_VPU>;
 			};
-			pd_vio@RK3328_PD_VIO {
-				reg = <RK3328_PD_VIO>;
-				clocks = <&cru ACLK_IEP>,
-					 <&cru HCLK_IEP>;
-				pm_qos = <&qos_vio>;
-			};
 		};
 
 		reboot-mode {
@@ -578,6 +570,11 @@
 							 <&cpu3 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
 					contribution = <4096>;
 				};
+				map1 {
+					trip = <&target>;
+					cooling-device = <&gpu THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+					contribution = <4096>;
+				};
 			};
 		};
 
@@ -642,7 +639,7 @@
 
 	gpu: gpu@ff300000 {
 		compatible = "rockchip,rk3328-mali", "arm,mali-450";
-		reg = <0x0 0xff300000 0x0 0x40000>;
+		reg = <0x0 0xff300000 0x0 0x30000>;
 		interrupts = <GIC_SPI 90 IRQ_TYPE_LEVEL_HIGH>,
 			     <GIC_SPI 87 IRQ_TYPE_LEVEL_HIGH>,
 			     <GIC_SPI 93 IRQ_TYPE_LEVEL_HIGH>,
@@ -659,8 +656,31 @@
 				  "ppmmu1";
 		clocks = <&cru ACLK_GPU>, <&cru ACLK_GPU>;
 		clock-names = "bus", "core";
+		operating-points-v2 = <&gpu_opp_table>;
 		power-domains = <&power RK3328_PD_GPU>;
 		resets = <&cru SRST_GPU_A>;
+		#cooling-cells = <2>;
+	};
+
+	gpu_opp_table: gpu-opp-table {
+		compatible = "operating-points-v2";
+
+		opp-200000000 {
+			opp-hz = /bits/ 64 <200000000>;
+			opp-microvolt = <1075000>;
+		};
+		opp-300000000 {
+			opp-hz = /bits/ 64 <300000000>;
+			opp-microvolt = <1075000>;
+		};
+		opp-400000000 {
+			opp-hz = /bits/ 64 <400000000>;
+			opp-microvolt = <1075000>;
+		};
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+			opp-microvolt = <1150000>;
+		};
 	};
 
 	h265e_mmu: iommu@ff330200 {
@@ -709,24 +729,23 @@
 	};
 
 	rkvdec: video-codec@ff360000 {
-		compatible = "rockchip,rk3399-vdec";
+		compatible = "rockchip,rk3328-vdec", "rockchip,rk3399-vdec";
 		reg = <0x0 0xff360000 0x0 0x480>;
 		interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "vdpu";
 		assigned-clocks = <&cru ACLK_RKVDEC>, <&cru SCLK_VDEC_CABAC>,
 				  <&cru SCLK_VDEC_CORE>;
-		assigned-clock-rates = <500000000>, <300000000>, <250000000>;
+		assigned-clock-rates = <400000000>, <400000000>, <300000000>;
 		clocks = <&cru ACLK_RKVDEC>, <&cru HCLK_RKVDEC>,
-			<&cru SCLK_VDEC_CABAC>, <&cru SCLK_VDEC_CORE>;
+			 <&cru SCLK_VDEC_CABAC>, <&cru SCLK_VDEC_CORE>;
 		clock-names = "axi", "ahb", "cabac", "core";
 		iommus = <&rkvdec_mmu>;
 		power-domains = <&power RK3328_PD_VIDEO>;
 		resets = <&cru SRST_VDEC_H>, <&cru SRST_VDEC_A>,
 			 <&cru SRST_VDEC_CORE>, <&cru SRST_VDEC_CABAC>,
 			 <&cru SRST_VDEC_NIU_A>, <&cru SRST_VDEC_NIU_H>;
-		reset-names = "video_h", "video_a",
-			      "video_core", "video_cabac",
-			      "niu_a", "niu_h";
+		reset-names = "video_h", "video_a", "video_core", "video_cabac",
+			       "niu_a", "niu_h";
 	};
 
 	rkvdec_mmu: iommu@ff360480 {
@@ -778,13 +797,9 @@
 		reg = <0x0 0xff3a0000 0x0 0x800>;
 		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "iep";
-		clocks = <&cru ACLK_IEP>,
-			 <&cru HCLK_IEP>;
+		clocks = <&cru ACLK_IEP>, <&cru HCLK_IEP>;
 		clock-names = "axi", "ahb";
-		resets = <&cru SRST_IEP_A>,
-			 <&cru SRST_IEP_H>;
-		reset-names = "axi", "ahb";
-		power-domains = <&power RK3328_PD_VIO>;
+		power-domains = <&power RK3328_PD_VIDEO>;
 		iommus = <&iep_mmu>;
 	};
 
@@ -793,10 +808,9 @@
 		reg = <0x0 0xff3a0800 0x0 0x40>;
 		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "iep_mmu";
-		clocks = <&cru ACLK_IEP>,
-			 <&cru HCLK_IEP>;
+		clocks = <&cru ACLK_IEP>, <&cru HCLK_IEP>;
 		clock-names = "aclk", "iface";
-		power-domains = <&power RK3328_PD_VIO>;
+		power-domains = <&power RK3328_PD_VIDEO>;
 		#iommu-cells = <0>;
 	};
 
@@ -870,7 +884,8 @@
 			<&cru SCLK_RTC32K>, <&cru SCLK_UART0>,
 			<&cru SCLK_UART1>, <&cru SCLK_UART2>,
 			<&cru ACLK_BUS_PRE>, <&cru ACLK_PERI_PRE>,
-			<&cru ACLK_RGA_PRE>, <&cru ACLK_RKVDEC_PRE>,
+			<&cru ACLK_VIO_PRE>, <&cru ACLK_RGA_PRE>,
+			<&cru ACLK_VOP_PRE>, <&cru ACLK_RKVDEC_PRE>,
 			<&cru ACLK_RKVENC>, <&cru ACLK_VPU_PRE>,
 			<&cru SCLK_VDEC_CABAC>, <&cru SCLK_VDEC_CORE>,
 			<&cru SCLK_VENC_CORE>, <&cru SCLK_VENC_DSP>,
@@ -880,15 +895,7 @@
 			<&cru ACLK_BUS_PRE>, <&cru HCLK_BUS_PRE>,
 			<&cru PCLK_BUS_PRE>, <&cru ACLK_PERI_PRE>,
 			<&cru HCLK_PERI>, <&cru PCLK_PERI>,
-			<&cru ACLK_VIO_PRE>, <&cru HCLK_VIO_PRE>,
-			<&cru ACLK_RGA_PRE>, <&cru SCLK_RGA>,
-			<&cru ACLK_VOP_PRE>, <&cru ACLK_RKVDEC_PRE>,
-			<&cru ACLK_RKVENC>, <&cru ACLK_VPU_PRE>,
-			<&cru SCLK_VDEC_CABAC>, <&cru SCLK_VDEC_CORE>,
-			<&cru SCLK_VENC_CORE>, <&cru SCLK_VENC_DSP>,
-			<&cru SCLK_EFUSE>, <&cru PCLK_DDR>,
-			<&cru ACLK_GMAC>, <&cru PCLK_GMAC>,
-			<&cru SCLK_RTC32K>, <&cru SCLK_USB3OTG_SUSPEND>;
+			<&cru SCLK_RTC32K>;
 		assigned-clock-parents =
 			<&cru HDMIPHY>, <&cru PLL_APLL>,
 			<&cru PLL_GPLL>, <&xin24m>,
@@ -898,7 +905,8 @@
 			<0>, <24000000>,
 			<24000000>, <24000000>,
 			<15000000>, <15000000>,
-			<100000000>, <100000000>,
+			<300000000>, <100000000>,
+			<400000000>, <100000000>,
 			<50000000>, <100000000>,
 			<100000000>, <100000000>,
 			<50000000>, <50000000>,
@@ -908,15 +916,7 @@
 			<150000000>, <75000000>,
 			<75000000>, <150000000>,
 			<75000000>, <75000000>,
-			<300000000>, <100000000>,
-			<300000000>, <200000000>,
-			<400000000>, <500000000>,
-			<200000000>, <300000000>,
-			<300000000>, <250000000>,
-			<200000000>, <100000000>,
-			<24000000>, <100000000>,
-			<150000000>, <50000000>,
-			<32768>, <32768>;
+			<32768>;
 	};
 
 	usb2phy_grf: syscon@ff450000 {
@@ -999,8 +999,6 @@
 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
 		fifo-depth = <0x100>;
 		max-frequency = <150000000>;
-		resets = <&cru SRST_MMC0>;
-		reset-names = "reset";
 		status = "disabled";
 	};
 
@@ -1013,8 +1011,6 @@
 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
 		fifo-depth = <0x100>;
 		max-frequency = <150000000>;
-		resets = <&cru SRST_SDIO>;
-		reset-names = "reset";
 		status = "disabled";
 	};
 
@@ -1027,8 +1023,6 @@
 		clock-names = "biu", "ciu", "ciu-drive", "ciu-sample";
 		fifo-depth = <0x100>;
 		max-frequency = <150000000>;
-		resets = <&cru SRST_EMMC>;
-		reset-names = "reset";
 		status = "disabled";
 	};
 
@@ -1071,6 +1065,7 @@
 		phy-mode = "rmii";
 		phy-handle = <&phy>;
 		snps,txpbl = <0x4>;
+		clock_in_out = "output";
 		status = "disabled";
 
 		mdio {
@@ -1169,11 +1164,6 @@
 		resets = <&cru SRST_SDMMCEXT>;
 		reset-names = "reset";
 		status = "disabled";
-	};
-
-	qos_vio: qos@ff760080 {
-		compatible = "syscon";
-		reg = <0x0 0xff760080 0x0 0x20>;
 	};
 
 	gic: interrupt-controller@ff811000 {

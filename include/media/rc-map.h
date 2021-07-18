@@ -175,6 +175,13 @@ struct rc_map_list {
 	struct rc_map map;
 };
 
+#ifdef CONFIG_MEDIA_CEC_RC
+/*
+ * rc_map_list from rc-cec.c
+ */
+extern struct rc_map_list cec_map;
+#endif
+
 /* Routines from rc-map.c */
 
 /**
@@ -298,6 +305,7 @@ struct rc_map *rc_map_get(const char *name);
 #define RC_MAP_REAL_AUDIO_220_32_KEYS    "rc-real-audio-220-32-keys"
 #define RC_MAP_REDDO                     "rc-reddo"
 #define RC_MAP_SNAPSTREAM_FIREFLY        "rc-snapstream-firefly"
+#define RC_MAP_STATION                   "rc-station"
 #define RC_MAP_STREAMZAP                 "rc-streamzap"
 #define RC_MAP_SU3000                    "rc-su3000"
 #define RC_MAP_TANGO                     "rc-tango"

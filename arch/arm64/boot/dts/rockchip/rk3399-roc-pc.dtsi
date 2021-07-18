@@ -208,13 +208,13 @@
 		pwm-supply = <&vcc3v3_sys>;
 	};
 
-	ir-receiver {
+	ir-receivet {
 		compatible = "gpio-ir-receiver";
-		gpios = <&gpio1 RK_PB6 GPIO_ACTIVE_LOW>;
-		linux,rc-map-name = "rc-khadas";
-		pinctrl-0 = <&ir_int>;
+		gpios = <&gpio0 RK_PA6 GPIO_ACTIVE_LOW>;
+		linux,rc-map-name = "rc-station";
 		pinctrl-names = "default";
-	};
+		pinctrl-0 = <&ir_int>;
+ 	};
 };
 
 &cpu_l0 {
@@ -393,6 +393,7 @@
 			vcc_sdio: LDO_REG4 {
 				regulator-name = "vcc_sdio";
 				regulator-boot-on;
+				regulator-always-on;
 				regulator-min-microvolt = <1800000>;
 				regulator-max-microvolt = <3000000>;
 				regulator-state-mem {
@@ -626,12 +627,6 @@
 		};
 	};
 
-	ir {
-		ir_int: ir-int {
-			rockchip,pins = <1 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-	};
-
 	pmic {
 		vsel1_pin: vsel1-pin {
 			rockchip,pins = <1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_down>;
@@ -689,6 +684,12 @@
 			rockchip,pins = <1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>;
 		};
 	};
+
+	ir {
+		ir_int: ir-int {
+			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
 };
 
 &pwm0 {
@@ -810,7 +811,6 @@
 
 &usbdrd_dwc3_0 {
 	status = "okay";
-	dr_mode = "host";
 };
 
 &usbdrd3_1 {

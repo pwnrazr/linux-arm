@@ -981,14 +981,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3188-bqedison2qc.dtb \
 	rk3188-px3-evb.dtb \
 	rk3188-radxarock.dtb \
-	rk3188-rbox-cs918.dtb \
-	rk3188-rbox-cs968.dtb \
-	rk3188-ugoos-ut2.dtb \
-	rk3228a-box.dtb \
-	rk3228a-box-h96mini.dtb \
 	rk3228-evb.dtb \
-	rk3229-box.dtb \
-	rk3229-box-a95xr1.dtb \
 	rk3229-evb.dtb \
 	rk3229-xms6.dtb \
 	rk3288-evb-act8846.dtb \
@@ -1004,7 +997,6 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += \
 	rk3288-rock-pi-n8.dtb \
 	rk3288-tinker.dtb \
 	rk3288-tinker-s.dtb \
-	rk3288-ugoos-um3.dtb \
 	rk3288-veyron-brain.dtb \
 	rk3288-veyron-fievel.dtb \
 	rk3288-veyron-jaq.dtb \

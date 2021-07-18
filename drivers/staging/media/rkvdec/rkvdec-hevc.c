@@ -2099,7 +2099,7 @@ static void assemble_hw_pps(struct rkvdec_ctx *ctx,
 	/* write pps */
 	WRITE_PPS(pps->pic_parameter_set_id, PIC_PARAMETER_SET_ID);
 	WRITE_PPS(sps->seq_parameter_set_id, PPS_SEQ_PARAMETER_SET_ID);
-	WRITE_PPS(!!(pps->flags & V4L2_HEVC_PPS_FLAG_DEPENDENT_SLICE_SEGMENT),
+	WRITE_PPS(!!(pps->flags & V4L2_HEVC_PPS_FLAG_DEPENDENT_SLICE_SEGMENT_ENABLED),
 		  DEPENDENT_SLICE_SEGMENTS_ENABLED_FLAG);
 	WRITE_PPS(!!(pps->flags & V4L2_HEVC_PPS_FLAG_OUTPUT_FLAG_PRESENT),
 		  OUTPUT_FLAG_PRESENT_FLAG);
@@ -2164,9 +2164,9 @@ static void assemble_hw_pps(struct rkvdec_ctx *ctx,
 		for (i = 0; i <= pps->num_tile_rows_minus1; i++)
 			WRITE_PPS(pps->row_height_minus1[i], ROW_HEIGHT(i));
 	} else {
-		WRITE_PPS(round_up(sps->pic_width_in_luma_samples, ctb_size_y) - 1,
+		WRITE_PPS(((sps->pic_width_in_luma_samples + ctb_size_y - 1) / ctb_size_y) - 1,
 			  COLUMN_WIDTH(0));
-		WRITE_PPS(round_up(sps->pic_height_in_luma_samples, ctb_size_y) - 1,
+		WRITE_PPS(((sps->pic_height_in_luma_samples + ctb_size_y - 1) / ctb_size_y) - 1,
 			  ROW_HEIGHT(0));
 	}
 
@@ -2185,6 +2185,7 @@ static void assemble_hw_rps(struct rkvdec_ctx *ctx,
 	struct rkvdec_hevc_priv_tbl *priv_tbl = hevc_ctx->priv_tbl.cpu;
 	struct rkvdec_rps_packet *hw_ps;
 	int i, j;
+	unsigned int lowdelay;
 
 #define WRITE_RPS(value, field) set_ps_field(hw_ps->info, field, value)
 
@@ -2194,13 +2195,14 @@ static void assemble_hw_rps(struct rkvdec_ctx *ctx,
 #define REF_PIC_IDX_L1(i)			PS_FIELD((i < 4 ? 76 : 128) + (i * 5), 4)
 
 #define LOWDELAY				PS_FIELD(182, 1)
-#define SHORT_TERM_REF_PIC_SET_SIZE		PS_FIELD(183, 10)
-#define LONG_TERM_REF_PIC_SET_SIZE		PS_FIELD(193, 9)
+#define LONG_TERM_RPS_BIT_OFFSET		PS_FIELD(183, 10)
+#define SHORT_TERM_RPS_BIT_OFFSET		PS_FIELD(193, 9)
 #define NUM_RPS_POC				PS_FIELD(202, 4)
 
 	for (j = 0; j < run->num_slices; j++) {
 		sl_params = &run->slices_params[j];
 		dpb = sl_params->dpb;
+		lowdelay = 0;
 
 		hw_ps = &priv_tbl->rps[j];
 		memset(hw_ps, 0, sizeof(*hw_ps));
@@ -2219,14 +2221,24 @@ static void assemble_hw_rps(struct rkvdec_ctx *ctx,
 
 		//WRITE_RPS(0xffffffff, PS_FIELD(96, 32));
 
-		// TODO: lowdelay
-		WRITE_RPS(0, LOWDELAY);
+		if (sl_params->slice_type != V4L2_HEVC_SLICE_TYPE_I &&
+		   !(!!(sl_params->flags & V4L2_HEVC_SLICE_PARAMS_FLAG_DEPENDENT_SLICE_SEGMENT))) {
+			lowdelay = 1;
+			for (i = 0; i < sl_params->num_active_dpb_entries; i++) {
+				if (dpb[i].pic_order_cnt[0] > sl_params->slice_pic_order_cnt) {
+					lowdelay = 0;
+					break;
+				}
+			}
+		}
 
-		// NOTE: these two differs from mpp
+		WRITE_RPS(lowdelay, LOWDELAY);
+
+		WRITE_RPS(sl_params->long_term_ref_pic_set_size +
+			  sl_params->short_term_ref_pic_set_size,
+			  LONG_TERM_RPS_BIT_OFFSET);
 		WRITE_RPS(sl_params->short_term_ref_pic_set_size,
-			  SHORT_TERM_REF_PIC_SET_SIZE);
-		WRITE_RPS(sl_params->long_term_ref_pic_set_size,
-			  LONG_TERM_REF_PIC_SET_SIZE);
+			  SHORT_TERM_RPS_BIT_OFFSET);
 
 		WRITE_RPS(sl_params->num_rps_poc_st_curr_before +
 			  sl_params->num_rps_poc_st_curr_after +

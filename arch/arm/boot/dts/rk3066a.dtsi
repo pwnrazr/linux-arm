@@ -8,7 +8,6 @@
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/clock/rk3066a-cru.h>
 #include <dt-bindings/power/rk3066-power.h>
-#include <dt-bindings/thermal/thermal.h>
 #include "rk3xxx.dtsi"
 
 / {
@@ -24,60 +23,24 @@
 			compatible = "arm,cortex-a9";
 			next-level-cache = <&L2>;
 			reg = <0x0>;
+			operating-points = <
+				/* kHz    uV */
+				1416000 1300000
+				1200000 1175000
+				1008000 1125000
+				816000  1125000
+				600000  1100000
+				504000  1100000
+				312000  1075000
+			>;
+			clock-latency = <40000>;
 			clocks = <&cru ARMCLK>;
-			operating-points-v2 = <&cpu0_opp_table>;
-			resets = <&cru SRST_CORE0>;
-			#cooling-cells = <2>;
 		};
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a9";
 			next-level-cache = <&L2>;
 			reg = <0x1>;
-			operating-points-v2 = <&cpu0_opp_table>;
-			resets = <&cru SRST_CORE1>;
-			#cooling-cells = <2>;
-		};
-	};
-
-	cpu0_opp_table: opp_table0 {
-		compatible = "operating-points-v2";
-		opp-shared;
-
-		opp-312000000 {
-			opp-hz = /bits/ 64 <312000000>;
-			opp-microvolt = <1075000>;
-			clock-latency-ns = <40000>;
-		};
-		opp-504000000 {
-			opp-hz = /bits/ 64 <504000000>;
-			opp-microvolt = <1100000>;
-		};
-		opp-600000000 {
-			opp-hz = /bits/ 64 <600000000>;
-			opp-microvolt = <1100000>;
-			opp-suspend;
-		};
-		opp-816000000 {
-			opp-hz = /bits/ 64 <816000000>;
-			opp-microvolt = <1125000>;
-		};
-		opp-1008000000 {
-			opp-hz = /bits/ 64 <1008000000>;
-			opp-microvolt = <1125000>;
-		};
-		opp-1200000000 {
-			opp-hz = /bits/ 64 <1200000000>;
-			opp-microvolt = <1175000>;
-		};
-		opp-1416000000 {
-			opp-hz = /bits/ 64 <1416000000>;
-			opp-microvolt = <1300000>;
-		};
-		opp-1608000000 {
-			opp-hz = /bits/ 64 <1608000000>;
-			opp-microvolt = <1400000>;
-			status = "disabled";
 		};
 	};
 
@@ -85,101 +48,6 @@
 		compatible = "rockchip,display-subsystem";
 		ports = <&vop0_out>, <&vop1_out>;
 	};
-
-	hdmi_sound: hdmi-sound {
-		compatible = "simple-audio-card";
-		simple-audio-card,name = "HDMI";
-		simple-audio-card,format = "i2s";
-		simple-audio-card,mclk-fs = <256>;
-		status = "disabled";
-
-		simple-audio-card,codec {
-			sound-dai = <&hdmi>;
-		};
-
-		simple-audio-card,cpu {
-			sound-dai = <&i2s0>;
-		};
-	};
-
-	gpu_opp_table: opp-table2 {
-		compatible = "operating-points-v2";
-
-		opp-266000000 {
-			opp-hz = /bits/ 64 <266000000>;
-			opp-microvolt = <1050000>;
-		};
-		opp-400000000 {
-			opp-hz = /bits/ 64 <400000000>;
-			opp-microvolt = <1275000>;
-		};
-	};
-
-	thermal-zones {
-		cpu_thermal: cpu-thermal {
-			polling-delay-passive = <100>;
-			polling-delay = <5000>;
-			thermal-sensors = <&thermal_int>;
-
-			trips {
-				cpu_alert0: cpu_alert0 {
-					temperature = <70000>;
-					hysteresis = <2000>;
-					type = "passive";
-				};
-				cpu_alert1: cpu_alert1 {
-					temperature = <75000>;
-					hysteresis = <2000>;
-					type = "passive";
-				};
-				cpu_crit: cpu_crit {
-					temperature = <90000>;
-					hysteresis = <2000>;
-					type = "critical";
-				};
-			};
-
-			cooling-maps {
-				map0 {
-					trip = <&cpu_alert0>;
-					cooling-device =
-						<&cpu0 THERMAL_NO_LIMIT 6>,
-						<&cpu1 THERMAL_NO_LIMIT 6>;
-				};
-				map1 {
-					trip = <&cpu_alert1>;
-					cooling-device =
-						<&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
-						<&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-				map2 {
-					trip = <&cpu_alert1>;
-					cooling-device =
-						<&gpu THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
-				};
-			};
-		};
-	};
-
-	thermal_int: thermal-int {
-		compatible = "generic-adc-thermal";
-		#thermal-sensor-cells = <0>;
-		io-channels = <&tsadc 0>;
-		io-channel-names = "sensor-channel";
-		temperature-lookup-table = < (-40000) 2319
-                                              25000  2244
-                                              30000  2238
-                                              45000  2218
-                                             125000  2088>;
-        };
-
-        thermal_ext: thermal-ext {
-                compatible = "generic-adc-thermal";
-                #thermal-sensor-cells = <0>;
-                io-channels = <&tsadc 1>;
-                io-channel-names = "sensor-channel";
-                status = "disabled";
-        };
 
 	sram: sram@10080000 {
 		compatible = "mmio-sram";
@@ -192,19 +60,6 @@
 			compatible = "rockchip,rk3066-smp-sram";
 			reg = <0x0 0x50>;
 		};
-	};
-
-	vpu: video-codec@10104000 {
-		compatible = "rockchip,rk3188-vpu";
-		reg = <0x10104000 0x800>;
-		interrupts = <GIC_SPI  9 IRQ_TYPE_LEVEL_HIGH>,
-                             <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-names = "vepu", "vdpu";
-		clocks = <&cru ACLK_VDPU>, <&cru HCLK_VDPU>,
-		         <&cru ACLK_VEPU>, <&cru HCLK_VEPU>;
-		clock-names = "aclk_vdpu", "hclk_vdpu",
-		              "aclk_vepu", "hclk_vepu";
-		power-domains = <&power RK3066_PD_VIDEO>;
 	};
 
 	vop0: vop@1010c000 {
@@ -269,7 +124,6 @@
 		pinctrl-0 = <&hdmii2c_xfer>, <&hdmi_hpd>;
 		power-domains = <&power RK3066_PD_VIO>;
 		rockchip,grf = <&grf>;
-		#sound-dai-cells = <0>;
 		status = "disabled";
 
 		ports {
@@ -346,20 +200,6 @@
 		status = "disabled";
 	};
 
-	spdif: sound@1011e000 {
-		compatible = "rockchip,rk3066-spdif";
-		reg = <0x1011e000 0x2000>;
-		#sound-dai-cells = <0>;
-		clocks = <&cru SCLK_SPDIF>, <&cru HCLK_SPDIF>;
-		clock-names = "mclk", "hclk";
-		dmas = <&dmac1_s 8>;
-		dma-names = "tx";
-		interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&spdif_tx>;
-		status = "disabled";
-	};
-
 	cru: clock-controller@20000000 {
 		compatible = "rockchip,rk3066a-cru";
 		reg = <0x20000000 0x1000>;
@@ -387,7 +227,7 @@
 
 	efuse: efuse@20010000 {
 		compatible = "rockchip,rk3066a-efuse";
-		reg = <0x20010000 0x20>;
+		reg = <0x20010000 0x4000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		clocks = <&cru PCLK_EFUSE>;
@@ -423,6 +263,7 @@
 		#io-channel-cells = <1>;
 		resets = <&cru SRST_TSADC>;
 		reset-names = "saradc-apb";
+		status = "disabled";
 	};
 
 	usbphy: phy {
@@ -651,12 +492,6 @@
 			};
 		};
 
-		spdif {
-			spdif_tx: spdif-tx {
-				rockchip,pins = <1 RK_PB6 1 &pcfg_pull_none>;
-			};
-		};
-
 		spi0 {
 			spi0_clk: spi0-clk {
 				rockchip,pins = <1 RK_PA5 2 &pcfg_pull_default>;
@@ -842,10 +677,6 @@
 	};
 };
 
-&global_timer {
-	status = "disabled";
-};
-
 &gpu {
 	compatible = "rockchip,rk3066-mali", "arm,mali-400";
 	interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL_HIGH>,
@@ -868,10 +699,7 @@
 			  "ppmmu2",
 			  "pp3",
 			  "ppmmu3";
-	assigned-clock-rates = <266000000>;
 	power-domains = <&power RK3066_PD_GPU>;
-	operating-points-v2 = <&gpu_opp_table>;
-	#cooling-cells = <2>;
 };
 
 &i2c0 {

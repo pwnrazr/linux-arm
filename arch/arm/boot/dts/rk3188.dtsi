@@ -99,35 +99,6 @@
 		ports = <&vop0_out>, <&vop1_out>;
 	};
 
-	gpu_opp_table: opp-table2 {
-		compatible = "operating-points-v2";
-
-		opp-133000000 {
-			opp-hz = /bits/ 64 <133000000>;
-			opp-microvolt = <975000>;
-		};
-		opp-200000000 {
-			opp-hz = /bits/ 64 <200000000>;
-			opp-microvolt = <1000000>;
-		};
-		opp-266000000 {
-			opp-hz = /bits/ 64 <266000000>;
-			opp-microvolt = <1025000>;
-		};
-		opp-300000000 {
-			opp-hz = /bits/ 64 <300000000>;
-			opp-microvolt = <1050000>;
-		};
-		opp-400000000 {
-			opp-hz = /bits/ 64 <400000000>;
-			opp-microvolt = <1100000>;
-		};
-		opp-600000000 {
-			opp-hz = /bits/ 64 <600000000>;
-			opp-microvolt = <1250000>;
-		};
-	};
-
 	sram: sram@10080000 {
 		compatible = "mmio-sram";
 		reg = <0x10080000 0x8000>;
@@ -139,19 +110,6 @@
 			compatible = "rockchip,rk3066-smp-sram";
 			reg = <0x0 0x50>;
 		};
-	};
-
-	vpu: video-codec@10104000 {
-		compatible = "rockchip,rk3188-vpu";
-		reg = <0x10104000 0x800>;
-		interrupts = <GIC_SPI  9 IRQ_TYPE_LEVEL_HIGH>,
-                             <GIC_SPI 10 IRQ_TYPE_LEVEL_HIGH>;
-		interrupt-names = "vepu", "vdpu";
-		clocks = <&cru ACLK_VDPU>, <&cru HCLK_VDPU>,
-		         <&cru ACLK_VEPU>, <&cru HCLK_VEPU>;
-		clock-names = "aclk_vdpu", "hclk_vdpu",
-		              "aclk_vepu", "hclk_vepu";
-		power-domains = <&power RK3188_PD_VIDEO>;
 	};
 
 	vop0: vop@1010c000 {
@@ -228,7 +186,7 @@
 		clock-names = "mclk", "hclk";
 		dmas = <&dmac1_s 8>;
 		dma-names = "tx";
-		interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&spdif_tx>;
 		status = "disabled";
@@ -245,7 +203,7 @@
 
 	efuse: efuse@20010000 {
 		compatible = "rockchip,rk3188-efuse";
-		reg = <0x20010000 0x20>;
+		reg = <0x20010000 0x4000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		clocks = <&cru PCLK_EFUSE>;
@@ -701,7 +659,6 @@
 			  "ppmmu2",
 			  "pp3",
 			  "ppmmu3";
-	operating-points-v2 = <&gpu_opp_table>;
 	power-domains = <&power RK3188_PD_GPU>;
 };
 

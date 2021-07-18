@@ -234,6 +234,7 @@
 		reg = <0x0 0xf8000000 0x0 0x2000000>,
 		      <0x0 0xfd000000 0x0 0x1000000>;
 		reg-names = "axi-base", "apb-base";
+		device_type = "pci";
 		#address-cells = <3>;
 		#size-cells = <2>;
 		#interrupt-cells = <1>;
@@ -252,7 +253,6 @@
 				<0 0 0 2 &pcie0_intc 1>,
 				<0 0 0 3 &pcie0_intc 2>,
 				<0 0 0 4 &pcie0_intc 3>;
-		linux,pci-domain = <0>;
 		max-link-speed = <1>;
 		msi-map = <0x0 &its 0x0 0x1000>;
 		phys = <&pcie_phy 0>, <&pcie_phy 1>,
@@ -1022,7 +1022,10 @@
 			pd_vdu@RK3399_PD_VDU {
 				reg = <RK3399_PD_VDU>;
 				clocks = <&cru ACLK_VDU>,
-					 <&cru HCLK_VDU>;
+					 <&cru HCLK_VDU>,
+					 <&cru SCLK_VDU_CA>,
+					 <&cru SCLK_VDU_CORE>;
+
 				pm_qos = <&qos_video_m1_r>,
 					 <&qos_video_m1_w>;
 			};
@@ -1276,9 +1279,8 @@
 
 	vdec: video-codec@ff660000 {
 		compatible = "rockchip,rk3399-vdec";
-		reg = <0x0 0xff660000 0x0 0x400>;
+		reg = <0x0 0xff660000 0x0 0x480>;
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL_HIGH 0>;
-		interrupt-names = "vdpu";
 		clocks = <&cru ACLK_VDU>, <&cru HCLK_VDU>,
 			 <&cru SCLK_VDU_CA>, <&cru SCLK_VDU_CORE>;
 		clock-names = "axi", "ahb", "cabac", "core";
@@ -1307,12 +1309,8 @@
 		reg = <0x0 0xff670000 0x0 0x800>;
 		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH 0>;
 		interrupt-names = "iep";
-		clocks = <&cru ACLK_IEP>,
-			 <&cru HCLK_IEP>;
+		clocks = <&cru ACLK_IEP>, <&cru HCLK_IEP>;
 		clock-names = "axi", "ahb";
-		resets = <&cru SRST_A_IEP>,
-			 <&cru SRST_H_IEP>;
-		reset-names = "axi", "ahb";
 		power-domains = <&power RK3399_PD_IEP>;
 		iommus = <&iep_mmu>;
 	};
@@ -1403,7 +1401,7 @@
 			<1000000000>,
 			 <150000000>,   <75000000>,
 			  <37500000>,
-			 <100000000>,  <100000000>,
+			 <300000000>,  <100000000>,
 			  <50000000>, <600000000>,
 			 <100000000>,   <50000000>,
 			 <400000000>, <400000000>,
@@ -1795,7 +1793,7 @@
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,name = "hdmi-sound";
+		simple-audio-card,name = "HDMI";
 		status = "disabled";
 
 		simple-audio-card,cpu {

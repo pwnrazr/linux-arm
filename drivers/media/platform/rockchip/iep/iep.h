@@ -81,8 +81,6 @@ struct rockchip_iep {
 	struct clk *axi_clk;
 	struct clk *ahb_clk;
 
-	struct reset_control *resets;
-
 	/* vfd lock */
 	struct mutex mutex;
 };

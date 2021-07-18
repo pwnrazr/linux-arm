@@ -25,19 +25,6 @@
 		vin-supply = <&vcc_io>;
 	};
 
-	vcc_sdio: sdmmcio-regulator {
-		compatible = "regulator-gpio";
-		gpios = <&grf_gpio 0 GPIO_ACTIVE_HIGH>;
-		states = <1800000 0x1
-			  3300000 0x0>;
-		regulator-name = "vcc_sdio";
-		regulator-type = "voltage";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-always-on;
-		vin-supply = <&vcc_sys>;
-	};
-
 	vcc_host_5v: vcc-host-5v-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
@@ -97,14 +84,6 @@
 		pinctrl-0 = <&wifi_enable_h>;
 		reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
 	};
-};
-
-&analog_sound {
-	status = "okay";
-};
-
-&codec {
-	status = "okay";
 };
 
 &cpu0 {
@@ -274,10 +253,6 @@
 };
 
 &i2s0 {
-	status = "okay";
-};
-
-&i2s1 {
 	status = "okay";
 };
 
