@@ -14,7 +14,13 @@ make ARCH=arm64 \
 make ARCH=arm64 \
      CROSS_COMPILE=aarch64-linux-gnu- \
      O=${OUT_DIR} \
-     Image modules dtbs bindeb-pkg \
+     Image modules dtbs \
+     -j$(nproc)
+
+make ARCH=arm64 \
+     CROSS_COMPILE=aarch64-linux-gnu- \
+     O=${OUT_DIR} \
+     bindeb-pkg \
      -j$(nproc)
 
 END=$(date +"%s")
