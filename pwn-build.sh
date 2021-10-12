@@ -12,13 +12,13 @@ make ARCH=arm64 \
      -j$(nproc)
 
 make ARCH=arm64 \
-     CROSS_COMPILE=aarch64-linux-gnu- \
+     CROSS_COMPILE="ccache aarch64-linux-gnu-" \
      O=${OUT_DIR} \
      Image modules dtbs \
      -j$(nproc)
 
 make ARCH=arm64 \
-     CROSS_COMPILE=aarch64-linux-gnu- \
+     CROSS_COMPILE="ccache aarch64-linux-gnu-" \
      O=${OUT_DIR} \
      bindeb-pkg \
      -j$(nproc)
