@@ -227,6 +227,17 @@ touch /boot/.next
 exit 0
 EOT
 
+##
+## Add preinstall
+##
+sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/preinst
+cat >> $tmpdir/DEBIAN/preinst <<EOT
+if [ -d /boot/dtb ]; then rm -rf /boot/dtb; fi
+#
+rm -f /boot/System.map* /boot/config*
+exit 0
+EOT
+
 if [ "$ARCH" != "um" ]; then
 	if is_enabled CONFIG_MODULES; then
 		deploy_kernel_headers debian/linux-headers
