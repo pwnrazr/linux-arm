@@ -1,24 +1,33 @@
 #!/bin/bash
 OUT_DIR=out/
 
+# HOME path
+HOME=/home/pwnrazr
+
+# Set compiler PATH
+PATH=${HOME}/proton-clang/bin/:$PATH
+
 export KBUILD_BUILD_HOST=PWN-PC
 
 START=$(date +"%s")
 
 make ARCH=arm64 \
+     CC="clang" \
      CROSS_COMPILE=aarch64-linux-gnu- \
      O=${OUT_DIR} \
      armbian_defconfig \
      -j$(nproc)
 
 make ARCH=arm64 \
-     CROSS_COMPILE="ccache aarch64-linux-gnu-" \
+     CC="ccache clang" \
+     CROSS_COMPILE="aarch64-linux-gnu-" \
      O=${OUT_DIR} \
      Image modules dtbs \
      -j$(nproc)
 
 make ARCH=arm64 \
-     CROSS_COMPILE="ccache aarch64-linux-gnu-" \
+     CC="ccache clang" \
+     CROSS_COMPILE="aarch64-linux-gnu-" \
      O=${OUT_DIR} \
      bindeb-pkg \
      -j$(nproc)
