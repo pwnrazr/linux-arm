@@ -268,7 +268,7 @@ EOT
 if [ "$ARCH" != "um" ]; then
 	if is_enabled CONFIG_MODULES; then
 		deploy_kernel_headers debian/linux-headers
-		create_package linux-headers-$version debian/linux-headers
+		create_package linux-headers-$version debian/linux-headers "headers"
 	fi
 
 	deploy_libc_headers debian/linux-libc-dev
