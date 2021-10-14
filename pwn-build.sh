@@ -21,6 +21,12 @@ make ARCH=arm64 \
 make ARCH=arm64 \
      CC="ccache clang" \
      CROSS_COMPILE="aarch64-linux-gnu-" \
+     LD="ld.lld" \
+     AR="llvm-ar" \
+     NM="llvm-nm" \
+     OBJCOPY="llvm-objcopy" \
+     OBJDUMP="llvm-objdump" \
+     STRIP="llvm-strip" \
      O=${OUT_DIR} \
      Image modules dtbs \
      -j$(nproc)
@@ -28,6 +34,12 @@ make ARCH=arm64 \
 make ARCH=arm64 \
      CC="ccache clang" \
      CROSS_COMPILE="aarch64-linux-gnu-" \
+     LD="ld.lld" \
+     AR="llvm-ar" \
+     NM="llvm-nm" \
+     OBJCOPY="llvm-objcopy" \
+     OBJDUMP="llvm-objdump" \
+     STRIP="llvm-strip" \
      O=${OUT_DIR} \
      bindeb-pkg \
      -j$(nproc)
