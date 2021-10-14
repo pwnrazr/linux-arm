@@ -88,6 +88,8 @@ deploy_kernel_headers () {
 		find $(find arch/$SRCARCH -name include -o -name scripts -type d) -type f
 	) > debian/hdrsrcfiles
 
+	ldstemp=$(mktemp);cp scripts/module.lds $ldstemp
+
 	{
 		if is_enabled CONFIG_STACK_VALIDATION; then
 			find tools/objtool -type f -executable
@@ -106,6 +108,8 @@ deploy_kernel_headers () {
 	tar -c -f - -C $srctree -T debian/hdrsrcfiles | tar -xf - -C $destdir
 	tar -c -f - -T debian/hdrobjfiles | tar -xf - -C $destdir
 	rm -f debian/hdrsrcfiles debian/hdrobjfiles
+
+	mv ${ldstemp} $destdir/scripts/module.lds
 
 	# copy .config manually to be where it's expected to be
 	cp $KCONFIG_CONFIG $destdir/.config
