@@ -102,6 +102,7 @@ deploy_kernel_headers () {
 
 	destdir=$pdir/usr/src/linux-headers-$version
 	mkdir -p $destdir
+	(cd $destdir; patch -p1 < /tmp/headers-debian-byteshift.patch; cd $srctree)
 	tar -c -f - -C $srctree -T debian/hdrsrcfiles | tar -xf - -C $destdir
 	tar -c -f - -T debian/hdrobjfiles | tar -xf - -C $destdir
 	rm -f debian/hdrsrcfiles debian/hdrobjfiles
