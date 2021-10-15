@@ -261,7 +261,7 @@ sed -e "s/exit 0//g" -i $tmpdir/DEBIAN/preinst
 cat >> $tmpdir/DEBIAN/preinst <<EOT
 if [ -d /boot/dtb ]; then rm -rf /boot/dtb; fi
 #
-rm -f /boot/System.map* /boot/config*
+rm -f /boot/System.map* /boot/config* /boot/vmlinuz*
 exit 0
 EOT
 
