@@ -1769,12 +1769,7 @@ CONFIG_NET_PKTGEN=m
 # end of Network testing
 # end of Networking options
 
-CONFIG_HAMRADIO=y
-
-#
-# Packet Radio protocols
-#
-# CONFIG_AX25 is not set
+# CONFIG_HAMRADIO is not set
 # CONFIG_CAN is not set
 CONFIG_BT=m
 CONFIG_BT_BREDR=y
