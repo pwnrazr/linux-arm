@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.15.23 Kernel Configuration
+# Linux/arm64 5.15.24 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="Proton clang version 13.0.0 (https://github.com/llvm/llvm-project b4fd512c36ca344a3ff69350219e8b0a67e9472a)"
 CONFIG_GCC_VERSION=0
