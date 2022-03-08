@@ -2,7 +2,7 @@
 HOME=/home/pwnrazr
 
 # Set compiler PATH
-PATH=${HOME}/proton-clang/bin/:$PATH
+PATH=${HOME}/azure-clang/bin/:$PATH
 
 make ARCH=arm64 \
 	CC=clang \
