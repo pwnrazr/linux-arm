@@ -5,7 +5,7 @@ OUT_DIR=out/
 HOME=/home/pwnrazr
 
 # Set compiler PATH
-PATH=${HOME}/azure-clang/bin/:$PATH
+PATH=${HOME}/razr-clang/bin/:$PATH
 
 export KBUILD_BUILD_HOST=PWN-PC
 
