@@ -1,8 +1,8 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.15.28 Kernel Configuration
+# Linux/arm64 5.15.30 Kernel Configuration
 #
-CONFIG_CC_VERSION_TEXT="Azure clang version 15.0.0 (https://github.com/llvm/llvm-project 36c36c1ee3b01b2d4a9e7ee12c9c23a98659e0fb)"
+CONFIG_CC_VERSION_TEXT="Razr clang version 15.0.0 (https://github.com/llvm/llvm-project e58dadf3e2c160d0c405aafd807d8305c5a92c4a)"
 CONFIG_GCC_VERSION=0
 CONFIG_CC_IS_CLANG=y
 CONFIG_CLANG_VERSION=150000
@@ -402,7 +402,6 @@ CONFIG_HZ=100
 CONFIG_SCHED_HRTICK=y
 CONFIG_ARCH_SPARSEMEM_ENABLE=y
 CONFIG_HW_PERF_EVENTS=y
-CONFIG_ARCH_HAS_FILTER_PGPROT=y
 CONFIG_CC_HAVE_SHADOW_CALL_STACK=y
 CONFIG_PARAVIRT=y
 CONFIG_PARAVIRT_TIME_ACCOUNTING=y
