@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.15.30 Kernel Configuration
+# Linux/arm64 5.15.31 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="Razr clang version 15.0.0 (https://github.com/llvm/llvm-project e58dadf3e2c160d0c405aafd807d8305c5a92c4a)"
 CONFIG_GCC_VERSION=0
@@ -703,8 +703,8 @@ CONFIG_ARCH_SUPPORTS_LTO_CLANG=y
 CONFIG_ARCH_SUPPORTS_LTO_CLANG_THIN=y
 CONFIG_HAS_LTO_CLANG=y
 # CONFIG_LTO_NONE is not set
-CONFIG_LTO_CLANG_FULL=y
-# CONFIG_LTO_CLANG_THIN is not set
+# CONFIG_LTO_CLANG_FULL is not set
+CONFIG_LTO_CLANG_THIN=y
 CONFIG_ARCH_SUPPORTS_CFI_CLANG=y
 # CONFIG_CFI_CLANG is not set
 CONFIG_HAVE_CONTEXT_TRACKING=y
