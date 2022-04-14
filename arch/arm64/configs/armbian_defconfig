@@ -1,8 +1,8 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.15.31 Kernel Configuration
+# Linux/arm64 5.15.34 Kernel Configuration
 #
-CONFIG_CC_VERSION_TEXT="Razr clang version 15.0.0 (https://github.com/llvm/llvm-project e58dadf3e2c160d0c405aafd807d8305c5a92c4a)"
+CONFIG_CC_VERSION_TEXT="Razr clang version 15.0.0 (https://github.com/llvm/llvm-project f74569b37c7fc94fa3548ff2fb20d09d3a8d50fc)"
 CONFIG_GCC_VERSION=0
 CONFIG_CC_IS_CLANG=y
 CONFIG_CLANG_VERSION=150000
@@ -3619,7 +3619,6 @@ CONFIG_HW_RANDOM_TIMERIOMEM=m
 # CONFIG_HW_RANDOM_BA431 is not set
 # CONFIG_HW_RANDOM_VIRTIO is not set
 CONFIG_HW_RANDOM_MESON=y
-# CONFIG_HW_RANDOM_CAVIUM is not set
 CONFIG_HW_RANDOM_OPTEE=m
 # CONFIG_HW_RANDOM_CCTRNG is not set
 # CONFIG_HW_RANDOM_XIPHERA is not set
